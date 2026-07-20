@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Alcove — an open-source dual-persona voice framework for Reachy Mini</title>
+  <meta name="description" content="Two voices, one robot, one continuous conversation. An open-source dual-persona voice framework for Reachy Mini. Apache 2.0.">
+
+  <meta property="og:title" content="Alcove">
+  <meta property="og:description" content="The open-source dual-persona voice framework for Reachy Mini.">
+  <meta property="og:type" content="website">
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<article class="page">
+
+  <!-- ========= MASTHEAD ========= -->
+  <header class="masthead">
+    <div class="masthead-left">
+      <div class="masthead-meta">
+        <span>Vol. 1</span>
+        <span class="dot">·</span>
+        <span>An open source framework</span>
+        <span class="dot">·</span>
+        <span>Apache 2.0</span>
+      </div>
+      <h1>Alcove</h1>
+      <p class="masthead-deck">
+        The room inside the Haven.
+        <span class="close">A dual-persona voice framework for Reachy Mini. Two voices, one robot, one continuous conversation. Yours to personalize.</span>
+      </p>
+    </div>
+
+    <aside class="masthead-right">
+      <div class="in-this-issue">
+        <div class="in-this-issue-label">In this issue</div>
+        <div class="num">I.</div>
+        <div class="row"><em>The pattern</em> — the seam between two voices</div>
+        <div class="num">II.</div>
+        <div class="row"><em>What's in the box</em> — the working list</div>
+        <div class="num">III.</div>
+        <div class="row"><em>The two slots</em> — yours to fill</div>
+        <div class="num">IV.</div>
+        <div class="row"><em>Fork it</em> — five steps to your own</div>
+      </div>
+    </aside>
+  </header>
+
+  <!-- ========= I. THE PATTERN ========= -->
+  <section class="pattern">
+    <div class="pattern-head">
+      <div class="eyebrow">Section i.</div>
+      <h2>The pattern</h2>
+      <p class="lede">Every capability inside Alcove lives here. Two personas share one session. The topic is passed like a baton.</p>
+    </div>
+
+    <ol class="dialogue">
+      <li><span class="who">You</span> <span><em>Question about the first domain.</em></span></li>
+      <li><span class="who persona-a">Persona A</span> <span>Answers, using the tools they have.</span></li>
+      <li><span class="who">You</span> <span><em>Question about the second domain.</em></span></li>
+      <li><span class="who persona-a">Persona A</span> <span>"Let me hand you to Persona B for that."</span></li>
+      <li class="action"><span class="who"></span> <span class="stage">Signature move. The voice shifts. The seam.</span></li>
+      <li><span class="who persona-b">Persona B</span> <span>Picks up the thread. Different voice, different tools, same conversation.</span></li>
+    </ol>
+  </section>
+
+  <!-- ========= II. WHAT'S IN THE BOX ========= -->
+  <section class="capabilities">
+    <div class="capabilities-head">
+      <div>
+        <div class="eyebrow">Section ii.</div>
+        <h2>What's in the box</h2>
+      </div>
+      <p class="lede">A working repertoire — the framework, the tools, and the packaging patterns that took months to get right. Yours from day one.</p>
+    </div>
+
+    <div class="capabilities-grid">
+      <div>
+        <div class="roman">i.</div>
+        <h3>Handoff engine</h3>
+        <p>The dual-persona pattern with response-cancel-before-create, so the incoming persona actually gets to speak.</p>
+      </div>
+      <div>
+        <div class="roman">ii.</div>
+        <h3>Signature moves</h3>
+        <p>Each persona configures a dance from the Reachy Mini library — the visible cue that the handoff happened.</p>
+      </div>
+      <div>
+        <div class="roman">iii.</div>
+        <h3>Vision</h3>
+        <p>A camera tool wired into the OpenAI Realtime image input. Point the robot at the world, ask about it.</p>
+      </div>
+      <div>
+        <div class="roman">iv.</div>
+        <h3>Live web</h3>
+        <p>A Tavily-powered search tool, so your personas ground their answers in current information.</p>
+      </div>
+      <div>
+        <div class="roman">v.</div>
+        <h3>Motion &amp; emotion</h3>
+        <p>Dance, head movement, head tracking, and the emotion library — the full Reachy expressive kit.</p>
+      </div>
+      <div>
+        <div class="roman">vi.</div>
+        <h3>Deploy patterns</h3>
+        <p>Runtime.env for secrets, headless-mode fixes, fast-shutdown, package-data hygiene — the deployment battles fought and filed.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========= III. THE TWO SLOTS ========= -->
+  <section class="duo">
+    <div class="slot slot--a">
+      <div class="slot-mark">
+        <div class="slot-portrait" aria-hidden="true">A</div>
+        <div class="slot-tag">
+          <div class="role">Slot i.</div>
+          <div class="name">Persona A</div>
+          <div class="subrole">who opens the conversation</div>
+        </div>
+      </div>
+
+      <blockquote>Whoever this is, they take the first question. Answer in their domain, use their tools, hand off when the topic changes hands.</blockquote>
+
+      <dl class="spec">
+        <dt>Voice</dt>
+        <dd>Any OpenAI Realtime voice</dd>
+        <dt>Move</dt>
+        <dd>Any move from the dances library</dd>
+        <dt>You write</dt>
+        <dd class="chips">
+          <span>name</span><span>instructions</span><span>tools</span><span>voice</span><span>move</span>
+        </dd>
+      </dl>
+    </div>
+
+    <div class="slot slot--b">
+      <div class="slot-mark">
+        <div class="slot-portrait" aria-hidden="true">B</div>
+        <div class="slot-tag">
+          <div class="role">Slot ii.</div>
+          <div class="name">Persona B</div>
+          <div class="subrole">who takes the handoff</div>
+        </div>
+      </div>
+
+      <blockquote>Whoever this is, they pick up the thread. Different voice, different tools, same continuous conversation.</blockquote>
+
+      <dl class="spec">
+        <dt>Voice</dt>
+        <dd>Any Realtime voice — pick a contrast</dd>
+        <dt>Move</dt>
+        <dd>Any move — visibly different from Slot A</dd>
+        <dt>You write</dt>
+        <dd class="chips">
+          <span>name</span><span>instructions</span><span>tools</span><span>voice</span><span>move</span>
+        </dd>
+      </dl>
+    </div>
+  </section>
+
+  <!-- ========= IV. FORK IT ========= -->
+  <section class="fork">
+    <div class="fork-copy">
+      <div class="eyebrow">Section iv.</div>
+      <h2>Fork it</h2>
+      <p>Five steps from clone to a robot in your voice.</p>
+    </div>
+
+    <ol class="steps">
+      <li>
+        <div class="roman">i.</div>
+        <div>
+          <h3>Fork this Space</h3>
+          <p>Click the three-dot menu at the top of this page and choose <em>Duplicate this Space</em>. You'll get your own private copy under your account.</p>
+        </div>
+      </li>
+      <li>
+        <div class="roman">ii.</div>
+        <div>
+          <h3>Rename the two profiles</h3>
+          <p>Inside <code>profiles/</code>, rename <code>persona_a</code> and <code>persona_b</code> to whoever your two characters are.</p>
+        </div>
+      </li>
+      <li>
+        <div class="roman">iii.</div>
+        <div>
+          <h3>Write the instructions</h3>
+          <p>Each persona's <code>instructions.txt</code> is where you write who they are, how they speak, what they know, and when they hand off. This is the whole personality layer.</p>
+        </div>
+      </li>
+      <li>
+        <div class="roman">iv.</div>
+        <div>
+          <h3>Pick voices and moves</h3>
+          <p>Each persona's <code>voice.txt</code> chooses a voice from OpenAI Realtime. Each has a signature move from Pollen's dances library, configured in <code>persona_manager.py</code>.</p>
+        </div>
+      </li>
+      <li>
+        <div class="roman">v.</div>
+        <div>
+          <h3>Install on your Reachy Mini</h3>
+          <p>From the Discover Apps panel on the robot — or run the command:</p>
+          <pre><code>reachy-mini-app-assistant install your-username/your-fork</code></pre>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <!-- ========= V. SIBLING ========= -->
+  <section class="sibling">
+    <div class="sibling-copy">
+      <p class="lede">Alcove was extracted from <em>Haven Kitchen</em> — my private dual-persona kitchen companion. Haven stays closed; Alcove is the framework underneath, given away.</p>
+      <p class="attribution">Take it, fork it, make it yours.</p>
+    </div>
+  </section>
+
+  <!-- ========= COLOPHON ========= -->
+  <footer class="colophon">
+    <div class="name"><em>Alcove</em></div>
+    <div class="thin">·</div>
+    <div class="handle">@AccidentalCoder80</div>
+    <div class="thin">·</div>
+    <div class="thin">Apache 2.0</div>
+    <a href="https://mindxpansion.ai" class="mindx-link" target="_blank" rel="noopener">mindxpansion.ai</a>
+  </footer>
+
+</article>
+</body>
+</html>

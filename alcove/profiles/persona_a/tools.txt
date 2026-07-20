@@ -1,0 +1,12 @@
+# Framework tools available to Persona A.
+# Trim this list to only the tools your persona should be able to call.
+move_head
+head_tracking
+play_emotion
+stop_emotion
+dance
+stop_dance
+do_nothing
+switch_persona
+camera
+web_search
