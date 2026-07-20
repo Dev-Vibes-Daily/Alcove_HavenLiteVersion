@@ -35,8 +35,9 @@ An open-source dual-persona voice framework for [Reachy Mini](https://github.com
 Two AI personas share one Reachy Mini. When a persona decides to hand off (based on what the user is asking), it calls the `switch_persona` tool — the current OpenAI Realtime session closes, the new persona opens their session with a different voice and a signature dance move, and the conversation continues seamlessly.
 
 ```mermaid
-flowchart LR
-    U[👤 User] <-->|voice + presence| R[🤖 Reachy Mini]
+flowchart TB
+    U[👤 User]
+    U <-->|voice + presence| R[🤖 Reachy Mini]
     R <-->|audio streams| H[🕯️ Alcove Handler]
     H <-->|Realtime API| AI[OpenAI Realtime]
 
@@ -46,7 +47,6 @@ flowchart LR
 
     PA --> T[Shared Tools<br/>📷 camera · 🌐 web search<br/>💃 dance · 🎭 emotion · 🎯 head tracking]
     PB --> T
-    T --> R
 
     style U fill:#FDF9F1,stroke:#191612,color:#191612
     style R fill:#4E6C4B,stroke:#191612,color:#FDF9F1
