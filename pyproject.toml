@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "alcove"
-version = "0.1.2"
+version = "0.1.3"
 authors = [
     { name = "AccidentalCoder80" },
     { name = "Pollen Robotics (upstream)", email = "contact@pollen-robotics.com" },

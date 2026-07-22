@@ -61,14 +61,54 @@ CONTROL_LOOP_FREQUENCY_HZ = 100.0  # Hz - Target frequency for the movement cont
 FullBodyPose = Tuple[NDArray[np.float32], Tuple[float, float], float]  # (head_pose_4x4, antennas, body_yaw)
 
 
+# ─── Persona-aware idle styles ────────────────────────────────────────────────
+# Each style tunes the BreathingMove parameters to give a persona a distinct
+# resting rhythm. Wire the style into your persona config via PersonaConfig.
+# idle_style, and MovementManager.set_idle_style() will apply the matching
+# params next time the robot goes idle.
+#
+# You can add your own styles here — each dict just needs to match the kwargs
+# BreathingMove.__init__ accepts.
+IDLE_STYLE_CONTEMPLATIVE = {
+    "neutral_pitch_deg": -3.0,       # subtle up-tilt (attentive listening)
+    "breathing_z_amplitude": 0.005,  # 5mm gentle
+    "breathing_frequency_hz": 0.17,  # 10 breaths/min — mindful, unhurried
+    "antenna_sway_amp_deg": 12.0,    # smaller sway
+    "antenna_frequency_hz": 0.4,     # slower antenna sway
+}
+
+IDLE_STYLE_ENERGETIC = {
+    "neutral_pitch_deg": -2.0,       # less up-tilt (more head-forward, ready)
+    "breathing_z_amplitude": 0.007,  # 7mm slightly bigger
+    "breathing_frequency_hz": 0.23,  # 14 breaths/min — quicker, awake
+    "antenna_sway_amp_deg": 18.0,    # larger sway
+    "antenna_frequency_hz": 0.6,     # faster antenna sway
+}
+
+IDLE_STYLES: Dict[str, Dict[str, float]] = {
+    "contemplative": IDLE_STYLE_CONTEMPLATIVE,
+    "energetic": IDLE_STYLE_ENERGETIC,
+}
+
+
 class BreathingMove(Move):  # type: ignore
-    """Breathing move with interpolation to neutral and then continuous breathing patterns."""
+    """Breathing move with interpolation to neutral and then continuous breathing patterns.
+
+    Parameters are per-persona tunable (see IDLE_STYLE_* dicts at module top) so
+    different personas can have visually distinct resting rhythms.
+    """
 
     def __init__(
         self,
         interpolation_start_pose: NDArray[np.float32],
         interpolation_start_antennas: Tuple[float, float],
         interpolation_duration: float = 1.0,
+        *,
+        neutral_pitch_deg: float = -3.0,
+        breathing_z_amplitude: float = 0.005,
+        breathing_frequency_hz: float = 0.2,
+        antenna_sway_amp_deg: float = 15.0,
+        antenna_frequency_hz: float = 0.5,
     ):
         """Initialize breathing move.
 
@@ -76,21 +116,29 @@ class BreathingMove(Move):  # type: ignore
             interpolation_start_pose: 4x4 matrix of current head pose to interpolate from
             interpolation_start_antennas: Current antenna positions to interpolate from
             interpolation_duration: Duration of interpolation to neutral (seconds)
+            neutral_pitch_deg: Head pitch at rest — negative = up-tilt (attentive)
+            breathing_z_amplitude: Vertical head oscillation amplitude in metres
+            breathing_frequency_hz: Breathing rate — 0.2 Hz = 12/min (awake adult)
+            antenna_sway_amp_deg: Antenna sway amplitude in degrees
+            antenna_frequency_hz: Antenna sway frequency in Hz
 
         """
         self.interpolation_start_pose = interpolation_start_pose
         self.interpolation_start_antennas = np.array(interpolation_start_antennas)
         self.interpolation_duration = interpolation_duration
 
-        # Neutral positions for breathing base
-        self.neutral_head_pose = create_head_pose(0, 0, 0, 0, 0, 0, degrees=True)
+        # Neutral positions for breathing base.
+        # Negative pitch = subtle upward tilt so idle reads as "attentive listening"
+        # rather than "resting/napping." Flip the sign if the robot looks down at
+        # rest — different Reachy Mini SDK versions have opposite pitch conventions.
+        self.neutral_head_pose = create_head_pose(0, 0, 0, 0, neutral_pitch_deg, 0, degrees=True)
         self.neutral_antennas = np.array([0.0, 0.0])
 
-        # Breathing parameters
-        self.breathing_z_amplitude = 0.005  # 5mm gentle breathing
-        self.breathing_frequency = 0.1  # Hz (6 breaths per minute)
-        self.antenna_sway_amplitude = np.deg2rad(15)  # 15 degrees
-        self.antenna_frequency = 0.5  # Hz (faster antenna sway)
+        # Breathing parameters (per-persona tunable).
+        self.breathing_z_amplitude = breathing_z_amplitude
+        self.breathing_frequency = breathing_frequency_hz
+        self.antenna_sway_amplitude = np.deg2rad(antenna_sway_amp_deg)
+        self.antenna_frequency = antenna_frequency_hz
 
     @property
     def duration(self) -> float:
@@ -263,7 +311,15 @@ class MovementManager:
         self.move_queue: deque[Move] = deque()
 
         # Configuration
-        self.idle_inactivity_delay = 0.3  # seconds
+        # Seconds of true silence before breathing kicks in. 0.3s is aggressive
+        # enough that natural conversation pauses (thinking, sipping coffee)
+        # drop the robot into idle. 3.0s lets normal beats breathe without her
+        # visibly transitioning to a resting posture.
+        self.idle_inactivity_delay = 3.0  # seconds
+        # Per-persona idle style. Update via set_idle_style() when a persona
+        # activates. Default is contemplative so the robot starts calm even
+        # before any persona takes over.
+        self._current_idle_style: str = "contemplative"
         self.target_frequency = CONTROL_LOOP_FREQUENCY_HZ
         self.target_period = 1.0 / self.target_frequency
 
@@ -356,6 +412,21 @@ class MovementManager:
             return False
 
         return self._now() - last_activity >= self.idle_inactivity_delay
+
+    def set_idle_style(self, style: str) -> None:
+        """Update the persona-specific idle breathing style.
+
+        Called from the session handler when a persona activates (session
+        start or after switch_persona). New style takes effect on the next
+        idle trigger — any breathing move already in flight finishes with
+        its original params, then the next one uses the new style.
+        """
+        if style not in IDLE_STYLES:
+            logger.warning("Unknown idle style '%s'; keeping current '%s'", style, self._current_idle_style)
+            return
+        if self._current_idle_style != style:
+            logger.info("Idle style: %s -> %s", self._current_idle_style, style)
+            self._current_idle_style = style
 
     def set_listening(self, listening: bool) -> None:
         """Enable or disable listening mode without touching shared state directly.
@@ -508,13 +579,23 @@ class MovementManager:
                     self._breathing_active = True
                     self.state.update_activity()
 
+                    style_params = IDLE_STYLES.get(
+                        self._current_idle_style, IDLE_STYLE_CONTEMPLATIVE,
+                    )
+                    # 3.0s interpolation is slow enough that the transition to
+                    # rest is imperceptible — 1.0s can look like a visible
+                    # head-drop before the pose settles.
                     breathing_move = BreathingMove(
                         interpolation_start_pose=current_head_pose,
                         interpolation_start_antennas=current_antennas,
-                        interpolation_duration=1.0,
+                        interpolation_duration=3.0,
+                        **style_params,
                     )
                     self.move_queue.append(breathing_move)
-                    logger.debug("Started breathing after %.1fs of inactivity", idle_for)
+                    logger.debug(
+                        "Started breathing after %.1fs of inactivity (style=%s)",
+                        idle_for, self._current_idle_style,
+                    )
                 except Exception as e:
                     self._breathing_active = False
                     logger.error("Failed to start breathing: %s", e)

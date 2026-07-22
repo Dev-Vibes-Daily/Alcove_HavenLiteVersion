@@ -27,6 +27,7 @@ class PersonaConfig:
     voice: str  # OpenAI Realtime voice ID
     profile_dir: str  # Folder name under profiles/
     signature_move: str  # Name of a move in reachy_mini_dances_library.AVAILABLE_MOVES
+    idle_style: str = "contemplative"  # Key into alcove.moves.IDLE_STYLES
     instructions: str = ""
     tool_names: list = field(default_factory=list)
 
@@ -37,12 +38,16 @@ PERSONAS: Dict[str, PersonaConfig] = {
         voice="marin",
         profile_dir="persona_a",
         signature_move="polyrhythm_combo",
+        # Slower, mindful idle rhythm — visually distinct from Persona B.
+        idle_style="contemplative",
     ),
     "Persona B": PersonaConfig(
         name="Persona B",
         voice="coral",
         profile_dir="persona_b",
         signature_move="groovy_sway_and_roll",
+        # Quicker, more active idle rhythm — reads as still-tuned-in energy.
+        idle_style="energetic",
     ),
 }
 

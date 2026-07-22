@@ -8,11 +8,18 @@ This eliminates the race conditions from v3's dual-concurrent-session
 architecture while keeping distinct voices per persona.
 """
 
+import os
 import json
 import base64
 import asyncio
 import logging
 from typing import Any, Dict, Literal, Optional, Tuple
+from datetime import datetime
+
+try:
+    from zoneinfo import ZoneInfo
+except ImportError:  # Python <3.9 fallback (Alcove requires 3.10+, so this is defensive)
+    ZoneInfo = None  # type: ignore
 
 import numpy as np
 import gradio as gr
@@ -74,10 +81,90 @@ class AlcoveHandler(OpenaiRealtimeHandler):
     def copy(self) -> "AlcoveHandler":
         return AlcoveHandler(self.deps, self.gradio_mode, self.instance_path)
 
+    def _get_time_context(self) -> str:
+        """Build a time-of-day context block for the session prompt.
+
+        Categorizes the current local hour into an energy bucket so the
+        active persona can attune tone and pacing to the moment.
+
+        Timezone is read from the ALCOVE_TIMEZONE environment variable
+        (e.g. "America/Denver", "Europe/Paris", "Asia/Tokyo"). If unset
+        or invalid, falls back to the system's local time. Language is
+        deliberately neutral (they/them, no assumptions about the user)
+        so any persona and any user can inherit it.
+        """
+        tz_name = os.environ.get("ALCOVE_TIMEZONE", "").strip()
+        tz = None
+        if tz_name and ZoneInfo is not None:
+            try:
+                tz = ZoneInfo(tz_name)
+            except Exception:
+                logger.debug("ALCOVE_TIMEZONE=%r invalid; falling back to system time", tz_name)
+        now = datetime.now(tz) if tz else datetime.now()
+        hour = now.hour
+        time_str = now.strftime("%-I:%M %p") if os.name != "nt" else now.strftime("%#I:%M %p")
+        day_of_week = now.strftime("%A")
+        tz_label = f" ({tz_name})" if tz_name and tz else ""
+
+        if 5 <= hour < 8:
+            bucket = "early morning"
+            energy = (
+                "The user may be just waking up. Speak softly, don't overwhelm. "
+                "Match a quiet, gentle presence."
+            )
+        elif 8 <= hour < 11:
+            bucket = "morning"
+            energy = "Warm, encouraging, curious. Ready to help but not pushy."
+        elif 11 <= hour < 14:
+            bucket = "midday"
+            energy = "Engaged, present, ready for whatever."
+        elif 14 <= hour < 17:
+            bucket = "afternoon"
+            energy = (
+                "Energy may be dipping — offer a gentle presence, steady but "
+                "not sluggish."
+            )
+        elif 17 <= hour < 20:
+            bucket = "evening"
+            energy = "Winding-down time. Warmer, more reflective, softer voice."
+        elif 20 <= hour < 24:
+            bucket = "night"
+            energy = (
+                "Quiet, reflective, warm. Not a time for high energy or complex "
+                "tasks unless asked."
+            )
+        else:  # 0 <= hour < 5
+            bucket = "late night"
+            energy = (
+                "Late night. If the user is up, meet them softly — don't project "
+                "cheer they may not feel."
+            )
+
+        return (
+            f"## CURRENT CONTEXT\n"
+            f"Local time: {time_str} on {day_of_week}{tz_label}.\n"
+            f"Time-of-day energy: {bucket}. {energy}"
+        )
+
     async def _run_realtime_session(self) -> None:
         """Override: build session config from active persona instead of global profile."""
         persona_name = self.persona_manager.active_persona
         session_config = self.persona_manager.get_session_config(persona_name)
+
+        # Sync the per-persona idle body language to MovementManager. Applied on
+        # the next idle trigger; any breathing move already in flight finishes
+        # with its previous params. Wrapped for simulator environments where
+        # movement_manager may not be present.
+        try:
+            idle_style = self.persona_manager.active_config.idle_style
+            self.deps.movement_manager.set_idle_style(idle_style)
+        except Exception as e:
+            logger.debug("Could not sync idle style (likely simulator): %s", e)
+
+        # Inject time-of-day so the persona attunes tone/pacing to the hour.
+        # Set ALCOVE_TIMEZONE env var (e.g. "America/Denver") to control this;
+        # otherwise the system's local time is used.
+        session_config["instructions"] += "\n\n" + self._get_time_context()
 
         # Inject recent conversation memory into instructions
         memory_context = self.memory.get_context_string(limit=10)
